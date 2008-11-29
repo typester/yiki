@@ -1,0 +1,4 @@
+<form method="post">
+<textarea name="text">[% page.content | html %]</textarea>
+<input type="submit" value="save"/>
+</form>

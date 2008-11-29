@@ -1,43 +1,47 @@
 package Yiki::Web::Controller::Root;
-
 use strict;
 use warnings;
 use parent 'Catalyst::Controller';
 
-#
-# Sets the actions in this controller to be registered with no prefix
-# so they function identically to actions created in MyApp.pm
-#
-__PACKAGE__->config->{namespace} = '';
+sub index :Chained('/') :PathPart('') :CaptureArgs(1) {
+    my ($self, $c, $title) = @_;
 
-=head1 NAME
+    unless ($title) {
+        $c->res->redirect( $c->uri_for('/FrontPage') );
+        $c->detach;
+    }
 
-Yiki::Web::Controller::Root - Root Controller for Yiki::Web
+    $c->stash->{title} = $title;
+    $c->stash->{page}  = $c->model('Wiki')->page($title);
+}
 
-=head1 DESCRIPTION
+sub page :Chained('index') :PathPart('') :Args(0) {
+    my ($self, $c) = @_;
 
-[enter your description here]
+    $c->detach('/default') unless $c->stash->{page};
 
-=head1 METHODS
+    $c->stash->{content} = $c->model('Wiki')->render(
+        $c->stash->{page}
+    );
+}
 
-=cut
+sub edit :Chained('index') :Args(0) {
+    my ($self, $c) = @_;
 
-=head2 index
+    my $page = $c->stash->{page} ||
+        $c->model('Wiki')->new_page( $c->stash->{title} );
+    if ($c->req->method eq 'POST') {
+        $page->content( $c->req->param('text') );
+        $c->model('Wiki')->save( $page );
 
-=cut
-
-sub index :Path :Args(0) {
-    my ( $self, $c ) = @_;
-
-    # Hello World
-    $c->response->body( $c->welcome_message );
+        $c->res->redirect( $c->uri_for('/' . $page->title ) );
+    }
 }
 
 sub default :Path {
     my ( $self, $c ) = @_;
     $c->response->body( 'Page not found' );
     $c->response->status(404);
-    
 }
 
 =head2 end

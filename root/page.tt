@@ -1,0 +1,4 @@
+<h1>yiki - [% title | html %]</h1>
+
+[% content %]
+
